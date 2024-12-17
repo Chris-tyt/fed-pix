@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Train Pix2Pix",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/now_flower/client.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--dataroot", "./datasets/facades",
+                "--name", "facades_pix2pix",
+                "--model", "pix2pix",
+                "--direction", "BtoA",
+                "--n_epochs", "10",
+                "--n_epochs_decay", "5"
+            ]
+        }
+    ]
+}
