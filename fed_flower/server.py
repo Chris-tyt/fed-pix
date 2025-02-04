@@ -24,6 +24,11 @@ def fit_config(rnd: int):
         "rnd": rnd,
         "batch_size": 16,
         "local_epochs": 1 if rnd < 2 else 2,
+        "learning_rate": 0.001,
+        "momentum": 0.9,
+        "local_updates": 50,  # 每轮本地更新的最大次数
+        "min_fit_clients": 2,  # 每轮最少需要多少客户端参与训练
+        "min_available_clients": 2,  # 最少需要多少可用客户端
     }
     return config
 
@@ -51,26 +56,33 @@ def set_parameters(net, parameters):
 def get_evaluate_fn(model, opt):
     """Return an evaluation function for server-side evaluation."""
     def evaluate(server_round: int, parameters, config):
+        print("in evaluate")
         # Update model with the latest parameters
-        set_parameters(model, parameters)
+        # set_parameters(model, parameters)
         
-        # Evaluation loop
-        test_data = create_dataset(opt)
+        # # Evaluation loop
+        # test_data = create_dataset(opt)
         # total = len(test_data)
         # correct = 0
         # with torch.no_grad():
         #     for data in test_data:
         #         model.set_input(data)
-        #         model.forward()
-        #         # Placeholder: Add evaluation logic here (e.g., accuracy calculation)
-        #         correct += 1  # Replace with actual metric calculation
-        # # return float(correct) / total, {}
-        return float(1), {}
+        #         model.test()
+                # Placeholder: Add evaluation logic here (e.g., accuracy calculation)
+                # correct += 1  # Replace with actual metric calculation
+        # return float(correct) / total, {}
+        return float(1), {}  # Placeholder return value
     return evaluate
+
+def weighted_average(metrics):
+    print(metrics)
+    # accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
+    # examples = [num_examples for num_examples, _ in metrics]
+    # return {"accuracy": sum(accuracies) / sum(examples)}
 
 # Parse options
 opt_train = TrainOptions().parse()
-# opt_test = TrainOptions().parse()  # For simplicity, using the same options for test; customize if needed
+opt_test = TrainOptions().parse()  # For simplicity, using the same options for test; customize if needed
 
 # Create model
 net = create_model(opt_train)
@@ -93,8 +105,11 @@ fl.server.start_server(
     config=fl.server.ServerConfig(num_rounds=5),
     strategy=fl.server.strategy.FedAvg(
         initial_parameters=fl.common.ndarrays_to_parameters(model_weights),
-        # evaluate_fn=get_evaluate_fn(net, opt_test),
-        # on_fit_config_fn=fit_config,
-        # on_evaluate_config_fn=evaluate_config,
+        min_fit_clients=1,
+        min_available_clients=1,
+        evaluate_fn=get_evaluate_fn(net, opt_test),  # Enable evaluation
+        # evaluate_metrics_aggregation_fn=weighted_average,
+        on_fit_config_fn=fit_config,
+        on_evaluate_config_fn=evaluate_config,
     ),
 )
